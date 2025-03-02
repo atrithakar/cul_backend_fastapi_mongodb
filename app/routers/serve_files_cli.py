@@ -9,7 +9,7 @@ router = APIRouter()
 
 BASE_DIR = 'c_cpp_modules'
 
-@router.get("/serve_latest_version/{module_name}")
+@router.get("/files/{module_name}")
 async def serve_latest_version(module_name: str):
     versions_file_path = os.path.join(BASE_DIR, module_name, 'versions.json')
     
@@ -51,7 +51,7 @@ async def serve_latest_version(module_name: str):
         raise HTTPException(status_code=500, detail="An error occurred.")
 
 
-@router.get("/serve_specified_version/{module_name}/{version}")
+@router.get("/files/{module_name}/{version}")
 async def serve_specified_version(module_name: str, version: str):
     module_dir = os.path.join(BASE_DIR, module_name, version)
     module_dir_wo_version = os.path.join(BASE_DIR, module_name)

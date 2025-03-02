@@ -97,7 +97,7 @@ async def get_versions(module_name: str):
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="An error occurred.")
 
-@router.get("/get_module_names")
+@router.get("/get_modules")
 async def get_module_names(db: AsyncIOMotorDatabase = Depends(get_database)):
     """Fetch all module names from the 'module' collection using Motor."""
     try:
