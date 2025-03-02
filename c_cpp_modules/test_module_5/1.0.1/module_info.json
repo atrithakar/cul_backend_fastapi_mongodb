@@ -1,0 +1,26 @@
+{
+    "name": "test_module_5",
+    "version": "1.0.1",
+    "description": "This is the test module intended to be used for testing purposes in development of CUL",
+    "author": "Atri Thakar - The Greatest Programmer That Ever Lived",
+    "license": "MIT",
+    "keywords": [
+        "atri",
+        "thakar",
+        "test",
+        "module",
+        "5",
+        "cul"
+    ],
+    "main": "atri.c",
+    "scripts": {
+        "test": "None"
+    },
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "requires": [
+        "test_module_4==1.0.0"
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "versions" : [
+        {
+            "version" : "1.0.0",
+            "path" : "test_module_3/1.0.0"
+        }
+    ],
+    "latest" : "1.0.0",
+    "latest_path" : "test_module_3/1.0.0",
+    "requires" :{
+        
+    }
+}

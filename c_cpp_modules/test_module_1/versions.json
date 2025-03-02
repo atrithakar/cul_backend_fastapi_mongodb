@@ -1,0 +1,21 @@
+{
+    "versions" : [
+        {
+            "version" : "1.0.0",
+            "path" : "test_module_1/1.0.0"
+        },
+        {
+            "version" : "1.0.1",
+            "path" : "test_module_1/1.0.1"
+        },
+        {
+            "version" : "1.0.2",
+            "path" : "test_module_1/1.0.2"
+        }
+    ],
+    "latest" : "1.0.2",
+    "latest_path" : "test_module_1/1.0.2",
+    "requires" :{
+        
+    }
+}
