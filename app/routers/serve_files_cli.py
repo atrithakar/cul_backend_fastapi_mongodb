@@ -11,6 +11,20 @@ BASE_DIR = 'c_cpp_modules'
 
 @router.get("/files/{module_name}")
 async def serve_latest_version(module_name: str):
+    '''
+    This function serves the latest version of the specified module.
+
+    Args:
+        module_name (str): The name of the module.
+
+    Returns:
+        StreamingResponse: A StreamingResponse object containing the zipped module files.
+
+    Raises:
+        HTTPException: If the module directory does not exist.
+        json.JSONDecodeError: If there is an error decoding the versions.json file.
+        Exception: If an error occurs while serving the files.
+    '''
     versions_file_path = os.path.join(BASE_DIR, module_name, 'versions.json')
     
     if not os.path.exists(os.path.join(BASE_DIR, module_name)):
@@ -53,6 +67,20 @@ async def serve_latest_version(module_name: str):
 
 @router.get("/files/{module_name}/{version}")
 async def serve_specified_version(module_name: str, version: str):
+    '''
+    This function serves the specified version of the specified module.
+
+    Args:
+        module_name (str): The name of the module.
+        version (str): The version of the module.
+
+    Returns:
+        StreamingResponse: A StreamingResponse object containing the zipped module files.
+
+    Raises:
+        HTTPException: If the module directory does not exist.
+        Exception: If an error occurs while serving the files.
+    '''
     module_dir = os.path.join(BASE_DIR, module_name, version)
     module_dir_wo_version = os.path.join(BASE_DIR, module_name)
     
