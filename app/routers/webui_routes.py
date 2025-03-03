@@ -135,6 +135,7 @@ async def signup_user_webui(request: Request, email: str = Form(...), password: 
 async def change_password_webui(request: Request, old_password: str = Form(...), new_password: str = Form(...), db: AsyncIOMotorDatabase = Depends(get_database)):
     '''
     This function changes the password of the user by validating the old password and updating the new password in the database.
+    If a user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -149,6 +150,9 @@ async def change_password_webui(request: Request, old_password: str = Form(...),
     Raises:
         None
     '''
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
     profile = await db["users"].find_one({"email": request.session.get("email")})
     if not check_password_hash(profile["password"], old_password):
         return templates.TemplateResponse("profile.html", {"request": request, "error": "Old password is incorrect", "profile": profile})
@@ -162,6 +166,7 @@ async def change_password_webui(request: Request, old_password: str = Form(...),
 async def main_page_webui(request: Request):
     '''
     This function serves the main page if the user is logged in else redirects to the login page.
+    if the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -175,6 +180,7 @@ async def main_page_webui(request: Request):
     '''
     if not request.session.get("email"):
         return RedirectResponse(url="/", status_code=303)
+    
     return templates.TemplateResponse("main_page.html", {"request": request})
 
 
@@ -182,6 +188,7 @@ async def main_page_webui(request: Request):
 async def main_page_search(request: Request, module_name: str = Form(...)):
     '''
     This function searches for the module name in the BASE_DIR and returns the versions of the modules if found.
+    if the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -223,6 +230,7 @@ async def main_page_search(request: Request, module_name: str = Form(...)):
 async def upload_modules_page(request: Request):
     '''
     This function serves the "upload modules" page.
+    If the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -233,6 +241,9 @@ async def upload_modules_page(request: Request):
     Raises:
         None
     '''
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+    
     return templates.TemplateResponse("upload_modules.html", {"request": request})
 
 
@@ -241,6 +252,7 @@ async def upload_modules_webui(request: Request, github_repo_link: str = Form(..
     '''
     This function clones the repository from the github_repo_link and inserts the module into the database.
     It automatically creates a module_id by calling the get_next_sequence_value function and generates the module_name from the github_repo_link.
+    If the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -254,6 +266,9 @@ async def upload_modules_webui(request: Request, github_repo_link: str = Form(..
     Raises:
         None
     '''
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
     module_name = github_repo_link.split('/')[-1]
     module = await db["modules"].find_one({"module_name": module_name})
     if module:
@@ -273,6 +288,8 @@ async def upload_modules_webui(request: Request, github_repo_link: str = Form(..
 async def delete_module_webui(request: Request, module_id: int, db: AsyncIOMotorDatabase = Depends(get_database)):
     '''
     This function deletes the module from the database and the filesystem of the server.
+    If the user is not logged in, it redirects to the login page.
+    If the email of the current user does not match the associated_user of the module, it returns an error message.
 
     Args:
         request (Request): The request object.
@@ -286,9 +303,16 @@ async def delete_module_webui(request: Request, module_id: int, db: AsyncIOMotor
     Raises:
         None
     '''
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
     module = await db["modules"].find_one({"module_id": module_id})
+
     if not module:
         return templates.TemplateResponse("profile.html", {"request": request, "error": "Module not found"})
+
+    if request.session.get("email") != module.get("associated_user"):
+        return templates.TemplateResponse("index.html", {"request": request, "error": "You are not authorized to delete this module"})
     
     module_path = os.path.join(BASE_DIR, module['module_name'])
     if os.path.exists(module_path):
@@ -305,6 +329,8 @@ async def delete_module_webui(request: Request, module_id: int, db: AsyncIOMotor
 async def update_module_webui(request: Request, module_id: int, db: AsyncIOMotorDatabase = Depends(get_database)):
     '''
     This function updates the module by pulling the latest changes from the github repository.
+    If the user is not logged in, it redirects to the login page.
+    If the email of the current user does not match the associated_user of the module, it returns an error message.
 
     Args:
         request (Request): The request object.
@@ -318,7 +344,15 @@ async def update_module_webui(request: Request, module_id: int, db: AsyncIOMotor
     Raises:
         None
     '''
+
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
     module = await db["modules"].find_one({"module_id": module_id})
+
+    if request.session.get("email") != module.get("associated_user"):
+        return templates.TemplateResponse("index.html", {"request": request, "error": "You are not authorized to update this module"})
+    
     if not module:
         return templates.TemplateResponse("profile.html", {"request": request, "error": "Module not found"})
     
@@ -333,6 +367,7 @@ async def update_module_webui(request: Request, module_id: int, db: AsyncIOMotor
 async def get_module_info_webui(request: Request, module: str, version: str):
     '''
     This function serves the module information page where it displays various module information like author, description, license, and dependencies.
+    If the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -346,6 +381,9 @@ async def get_module_info_webui(request: Request, module: str, version: str):
     Raises:
         None
     '''
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
     module_info_file_path = os.path.join(BASE_DIR, module, version, 'module_info.json')
     if not os.path.exists(module_info_file_path):
         return HTMLResponse(content="<h1>Error 404: Module/Version not found.</h1>", status_code=404)
@@ -369,6 +407,7 @@ async def get_module_info_webui(request: Request, module: str, version: str):
 async def get_profile_webui(request: Request, db: AsyncIOMotorDatabase = Depends(get_database)):
     '''
     This function serves the profile page of the user if the user is logged in else redirects to the login page.
+    If the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -381,17 +420,19 @@ async def get_profile_webui(request: Request, db: AsyncIOMotorDatabase = Depends
     Raises:
         None
     '''
-    if request.session.get("email"):
-        profile = await db["users"].find_one({"email": request.session.get("email")})
-        modules = await db["modules"].find({"associated_user": request.session.get("email")}).to_list(100)
-        return templates.TemplateResponse("profile.html", {"request": request, "profile": profile, "modules": modules})
-    return RedirectResponse(url="/", status_code=303)
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
+    profile = await db["users"].find_one({"email": request.session.get("email")})
+    modules = await db["modules"].find({"associated_user": request.session.get("email")}).to_list(100)
+    return templates.TemplateResponse("profile.html", {"request": request, "profile": profile, "modules": modules})
 
 
 @router.get("/logout", response_class=RedirectResponse)
 async def logout(request: Request):
     '''
     This function logs out the user by popping the email from the session.
+    If the user is not logged in, it redirects to the login page.
 
     Args:
         request (Request): The request object.
@@ -402,5 +443,8 @@ async def logout(request: Request):
     Raises:
         None
     '''
+    if not request.session.get("email"):
+        return RedirectResponse(url="/", status_code=303)
+
     request.session.pop("email", None)
     return RedirectResponse(url="/")
