@@ -99,7 +99,18 @@ async def get_versions(module_name: str):
 
 @router.get("/get_modules")
 async def get_module_names(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Fetch all module names from the 'module' collection using Motor."""
+    '''
+    Fetches all the module names from the database and returns them as a list.
+
+    Args:
+        db: The database connection object
+
+    Returns:
+        module_list: A list of module names
+
+    Raises:
+        HTTPException: If there is an error querying the database
+    '''
     try:
         modules = await db["modules"].find().to_list(100)
         module_list = [module["module_name"] for module in modules]

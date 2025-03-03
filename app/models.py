@@ -1,4 +1,6 @@
-# filepath: /D:/projects/project_cul/fastapi backend/app/models.py
+'''
+This file contains the Pydantic models for the User and Module classes used in the app. These models define the structure of the data that is sent and received by the API endpoints.
+'''
 from pydantic import BaseModel, Field
 from typing import Optional
 

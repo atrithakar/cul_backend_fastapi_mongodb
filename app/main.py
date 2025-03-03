@@ -1,4 +1,3 @@
-# filepath: /D:/projects/project_cul/fastapi backend/app/main.py
 import os
 import json
 import io

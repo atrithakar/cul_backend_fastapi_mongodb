@@ -1,4 +1,6 @@
-# filepath: /D:/projects/project_cul/fastapi backend/app/database.py
+'''
+This file contains the code to connect to the MongoDB database and get the next sequence value for the _id field of the documents.
+'''
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic_settings import BaseSettings
 
