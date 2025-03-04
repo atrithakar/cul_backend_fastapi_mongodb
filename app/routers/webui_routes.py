@@ -154,6 +154,10 @@ async def change_password_webui(request: Request, old_password: str = Form(...),
         return RedirectResponse(url="/", status_code=303)
 
     profile = await db["users"].find_one({"email": request.session.get("email")})
+    
+    if request.session.get("email") != profile.get("email"):
+        return templates.TemplateResponse("index.html", {"request": request, "error": "You are not authorized to change the password"})
+
     if not check_password_hash(profile["password"], old_password):
         return templates.TemplateResponse("profile.html", {"request": request, "error": "Old password is incorrect", "profile": profile})
     
