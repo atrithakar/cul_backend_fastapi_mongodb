@@ -17,7 +17,7 @@ app = FastAPI()
 app.include_router(api_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/templates", StaticFiles(directory="app/templates"), name="templates")
-app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
+app.add_middleware(SessionMiddleware, secret_key="atri")
 
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
