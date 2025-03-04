@@ -2,6 +2,7 @@ import os
 import json
 import io
 import zipfile
+import socket
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from starlette.responses import JSONResponse
@@ -18,5 +19,17 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/templates", StaticFiles(directory="app/templates"), name="templates")
 app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 
+def get_host_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.254.254.254', 1))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.0.104", port=8000)
+    uvicorn.run(app, host=get_host_ip(), port=8000)
