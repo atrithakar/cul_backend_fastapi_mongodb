@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <form action="/signup" method="post">
+        <form action="/signup" method="post" onsubmit="return validateUserName()">
             <label for="first_name">First name:</label>
             <input type="text" name="first_name" id="first_name" required><br>
 
@@ -35,4 +35,15 @@
         </div>
     </div>
 </body>
+<script>
+    function validateUserName() {
+        const username = document.getElementById('username').value;
+        const regex = /^[a-zA-Z0-9_]{3,}$/; // Alphanumeric and underscores, at least 3 characters
+        if (!regex.test(username)) {
+            alert('Username must be at least 3 characters long and can only contain letters, numbers, and underscores.');
+            return false;
+        }
+        return true;
+    }
+</script>
 </html>
