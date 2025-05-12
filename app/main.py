@@ -19,6 +19,12 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/templates", StaticFiles(directory="app/templates"), name="templates")
 app.add_middleware(SessionMiddleware, secret_key="atri")
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key = "atri",
+    max_age = 60 * 60 * 24 * 15
+)
+
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
