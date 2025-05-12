@@ -1,0 +1,7 @@
+fastenv/
+discarded.py
+app/__pycache__/
+app/routers/__pycache__/
+app/create_db.py
+c_cpp_modules/
+commits.txt
