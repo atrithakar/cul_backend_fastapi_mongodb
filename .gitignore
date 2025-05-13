@@ -4,4 +4,5 @@ app/__pycache__/
 app/routers/__pycache__/
 app/create_db.py
 c_cpp_modules/
+!c_cpp_modules/README.md
 commits.txt
