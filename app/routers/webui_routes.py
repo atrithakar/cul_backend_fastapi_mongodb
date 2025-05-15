@@ -328,7 +328,7 @@ async def delete_module_webui(request: Request, module_id: int, db: AsyncIOMotor
     
     module_path = os.path.join(BASE_DIR, module['module_name'])
     if os.path.exists(module_path):
-        shutil.rmtree(module_path, onerror=handle_remove_readonly)
+        shutil.rmtree(module_path, onexc=handle_remove_readonly)
         delete_result = await db["modules"].delete_one({"module_id": module_id})
         print(f"Deleted {delete_result.deleted_count} document")
     
