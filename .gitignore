@@ -6,3 +6,4 @@ app/create_db.py
 c_cpp_modules/
 !c_cpp_modules/README.md
 commits.txt
+plan.txt
