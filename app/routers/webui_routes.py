@@ -11,6 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from database import get_database, get_next_sequence_value
 from models import User, Module
 from rapidfuzz import process
+from .checksum_utils import generate_module_checksum
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -282,6 +283,13 @@ async def upload_modules_webui(request: Request, github_repo_link: str = Form(..
     if cloned_status != 0:
         return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Error cloning the repository"})
     
+    module_folder = os.path.join("./c_cpp_modules", module_name)
+    hash_success_status = generate_module_checksum(module_folder)
+
+    if not hash_success_status:
+        shutil.rmtree(module_folder, onexc=handle_remove_readonly)
+        return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Error generating checksum, \"versions.json\" not found"})
+
     module_id = await get_next_sequence_value("module_id")
     module = {"module_id": module_id, "module_name": module_name, "module_url": github_repo_link, "associated_user": request.session.get("email")}
     await db["modules"].insert_one(module)
