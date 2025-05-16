@@ -4,14 +4,14 @@ import json
 
 def generate_checksum(module_path: str) -> str:
     '''
-    Generates a SHA-256 checksum for all files in the specified folder and its subfolders.
-    The checksum is generated based on the relative paths and contents of the files, excluding any file named "checksum.txt".
+    Generates a SHA-256 checksum for all files in the specified folder and its subfolders (excluding .git).
+    The checksum is based on the relative paths and contents of the files.
 
     Args:
-        module_path (str): The path to the folder for which the checksum is to be generated.
+        module_path (str): The path to the folder to be hashed.
 
     Returns:
-        str: The SHA-256 checksum of the folder.
+        str: The SHA-256 checksum as a hexadecimal string.
 
     Raises:
         None
@@ -19,18 +19,16 @@ def generate_checksum(module_path: str) -> str:
     sha256_hash = hashlib.sha256()
     file_count = 0
 
-    for root, dirs, files in sorted(os.walk(module_path)):
-        dirs.sort()
+    for root, dirs, files in os.walk(module_path):
+        dirs[:] = [d for d in dirs if d != '.git']
         files.sort()
 
         for filename in files:
-            file_path = os.path.join(root, filename)
-
             if filename == "checksum.txt":
                 continue
 
+            file_path = os.path.join(root, filename)
             relative_path = os.path.relpath(file_path, module_path)
-            print(f"Hashing file: {relative_path}")
             sha256_hash.update(relative_path.encode())
 
             try:
@@ -42,9 +40,36 @@ def generate_checksum(module_path: str) -> str:
                 print(f"Error reading {file_path}: {e}")
 
     if file_count == 0:
-        print("No files found to hash.")
+        print(f"No files to hash in {module_path}. Skipping.")
+        return None
 
     return sha256_hash.hexdigest()
+
+
+def generate_checksums_for_new_versions(module_path: str):
+    for version_folder in sorted(os.listdir(module_path)):
+        version_path = os.path.join(module_path, version_folder)
+
+        if not os.path.isdir(version_path):
+            continue
+
+        if version_folder == '.git':
+            continue
+
+        checksum_file = os.path.join(version_path, "checksum.txt")
+        if os.path.exists(checksum_file):
+            print(f"Skipping {version_folder} (already has checksum.txt)")
+            continue
+
+        print(f"Hashing new version: {version_folder}")
+        checksum = generate_checksum(version_path)
+        if checksum:
+            with open(checksum_file, "w") as f:
+                f.write(checksum)
+            print(f"Checksum for {version_folder}: {checksum}")
+        else:
+            print(f"No files hashed for {version_folder}, checksum not written.")
+
 
 def store_checksum(module_path: str) -> None:
     '''
@@ -110,6 +135,7 @@ if __name__ == "__main__":
     # print(f"Checksum: {checksum}")
     # store_checksum(folder_to_hash)
     generate_module_checksum(folder_to_hash)
+    # generate_checksums_for_new_versions(folder_to_hash)
 
 
 

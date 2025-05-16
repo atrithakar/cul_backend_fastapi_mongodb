@@ -11,7 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from database import get_database, get_next_sequence_value
 from models import User, Module
 from rapidfuzz import process
-from .checksum_utils import generate_module_checksum
+from .checksum_utils import generate_module_checksum, generate_checksums_for_new_versions
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -369,6 +369,8 @@ async def update_module_webui(request: Request, module_id: int, db: AsyncIOMotor
         return templates.TemplateResponse("profile.html", {"request": request, "error": "Module not found"})
     
     os.system(f"cd {os.path.join(BASE_DIR, module['module_name'])} && git pull")
+    module_path = os.path.join(BASE_DIR, module['module_name'])
+    generate_checksums_for_new_versions(module_path)
     
     profile = await db["users"].find_one({"email": request.session.get("email")})
     modules = await db["modules"].find({"associated_user": request.session.get("email")}).to_list(100)
