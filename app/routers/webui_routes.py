@@ -14,7 +14,7 @@ from rapidfuzz import process
 from .checksum_utils import generate_module_checksum, generate_checksums_for_new_versions
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = "c_cpp_modules"
 

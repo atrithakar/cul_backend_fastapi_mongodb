@@ -15,8 +15,6 @@ app = FastAPI()
 # Mount static folder (e.g., CSS, JS, images)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Setup Jinja2 templates (used for rendering HTML)
-templates = Jinja2Templates(directory="templates")
 
 # Include your routes
 app.include_router(api_router)
