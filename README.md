@@ -11,6 +11,18 @@ CUL is being actively developed to become a fully modular, self-hostable, and op
 
 **You can access deployed backend [here](https://cul-backend-fastapi-mongodb.onrender.com/). It also includes a web frontend, so go check it out.**
 
+### Test Credentials
+
+Email:
+```
+test@cul.com
+```
+
+Password:
+```
+test
+```
+
 ---
 
 ## 🚀 How to Use
