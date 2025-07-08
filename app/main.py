@@ -6,11 +6,12 @@ from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 from routers import router as api_router
 from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI()
 app.include_router(api_router)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/templates", StaticFiles(directory="app/templates"), name="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SESSION_SECRET_KEY", "default_dev_key"),
