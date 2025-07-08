@@ -6,7 +6,10 @@ This repository contains the backend code of **Project CUL**, a command-line uti
 
 CUL is being actively developed to become a fully modular, self-hostable, and open ecosystem for C/C++ module management. The backend plays a crucial role in powering both the CLI and Web UI.
 
-> ⚠️ **Note:** The official hosting of this backend (along with the public Web UI) is temporarily on hold while remaining bugs are identified and resolved. Deployment will begin once the platform reaches stability.
+---
+## How to Access
+
+**You can access deployed backend [here](https://cul-backend-fastapi-mongodb.onrender.com/). It also includes a web frontend, so go check it out.**
 
 ---
 
