@@ -2,7 +2,8 @@ import os
 import shutil
 import json
 from fastapi import APIRouter, HTTPException, Depends, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from secrets import token_hex
 from fastapi.templating import Jinja2Templates
 from starlette.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -17,6 +18,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = "c_cpp_modules"
+
+temp_link_code_map = {}
 
 def handle_remove_readonly(func, path, exc_info):
     '''
@@ -252,48 +255,104 @@ async def upload_modules_page(request: Request):
     return templates.TemplateResponse("upload_modules.html", {"request": request})
 
 
-@router.post("/upload_modules", response_class=HTMLResponse)
-async def upload_modules_webui(request: Request, github_repo_link: str = Form(...), db: AsyncIOMotorDatabase = Depends(get_database)):
+@router.post("/generate_code")
+async def generate_code(data: dict):
     '''
-    This function clones the repository from the github_repo_link and inserts the module into the database.
-    It automatically creates a module_id by calling the get_next_sequence_value function and generates the module_name from the github_repo_link.
-    If the user is not logged in, it redirects to the login page.
+    This function generates a temporary verification code for the provided GitHub repository link.
 
     Args:
-        request (Request): The request object.
-        github_repo_link (str): The github repository link of the module.
-        db (AsyncIOMotorDatabase): The database object.
+        data (dict): A dictionary containing the GitHub repository link.
 
     Returns:
-        HTMLResponse: The HTML response containing the "upload modules" page with an error message if the module already exists.
-        RedirectResponse: The redirect response to the main page if the module is uploaded successfully.
+        JSONResponse: A JSON response containing the generated verification code if the link is valid.
+        JSONResponse: A JSON response with an error message if the link is invalid.
 
     Raises:
         None
+    '''
+    github_repo_link = data.get("github_repo_link")
+    if not github_repo_link or not github_repo_link.startswith("https://github.com/"):
+        return JSONResponse(status_code=400, content={"error": "Invalid GitHub link"})
+    
+    code = token_hex(32)  # 256-bit hex string
+    temp_link_code_map[github_repo_link] = code
+    return {"generated_code": code}
+
+@router.post("/upload_modules", response_class=HTMLResponse)
+async def upload_modules_webui(request: Request, github_repo_link: str = Form(...), db: AsyncIOMotorDatabase = Depends(get_database)):
+    '''
+    This function handles the upload of a CUL module via the Web UI. It verifies that the user is logged in, ensures the module does not already exist,
+    and validates ownership of the GitHub repository through a temporary verification code mechanism.
+
+    - Verifies session, checks for duplicate module, and ensures a verification code was generated.
+    - Clones the GitHub repo and confirms presence of `versions.json` and `cul_verify.txt`.
+    - Validates the code in `cul_verify.txt` against the generated one.
+    - Generates checksum, inserts module into DB, and cleans up on failure.
+
+    Args:
+        request (Request): The HTTP request object containing user session data.
+        github_repo_link (str): The GitHub repository link provided by the user.
+        db (AsyncIOMotorDatabase): The MongoDB database object used for inserting module data.
+
+    Returns:
+        HTMLResponse: Rendered upload page with an error message if verification fails or module already exists.
+        RedirectResponse: Redirect to the main page upon successful module upload.
+
+    Raises:
+        Exception: If any of the required files are missing, verification code does not match, or cloning fails.
     '''
     if not request.session.get("email"):
         return RedirectResponse(url="/", status_code=303)
 
     module_name = github_repo_link.split('/')[-1]
-    module = await db["modules"].find_one({"module_name": module_name})
-    if module:
+    module_folder = os.path.join(BASE_DIR, module_name)
+
+    if await db["modules"].find_one({"module_name": module_name}):
         return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Module already exists"})
-    
-    cloned_status = os.system(f"git clone {github_repo_link} {os.path.join(BASE_DIR, module_name)}")
+
+    if github_repo_link not in temp_link_code_map:
+        return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Repository verification code not generated for this link"})
+
+    expected_code = temp_link_code_map[github_repo_link]
+
+    cloned_status = os.system(f"git clone {github_repo_link} {module_folder}")
     if cloned_status != 0:
         return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Error cloning the repository"})
-    
-    module_folder = os.path.join("./c_cpp_modules", module_name)
-    hash_success_status = generate_module_checksum(module_folder)
 
-    if not hash_success_status:
+    try:
+        if not os.path.exists(os.path.join(module_folder, "versions.json")):
+            raise Exception("versions.json not found")
+
+        verify_path = os.path.join(module_folder, "cul_verify.txt")
+        if not os.path.exists(verify_path):
+            raise Exception("cul_verify.txt not found")
+
+        with open(verify_path, "r") as f:
+            user_code = f.read().strip()
+
+        if user_code != expected_code:
+            raise Exception("Verification code mismatch")
+
+        hash_success_status = generate_module_checksum(module_folder)
+        if not hash_success_status:
+            raise Exception("Error generating checksum")
+
+        module_id = await get_next_sequence_value("module_id")
+        module_doc = {
+            "module_id": module_id,
+            "module_name": module_name,
+            "module_url": github_repo_link,
+            "associated_user": request.session.get("email")
+        }
+        await db["modules"].insert_one(module_doc)
+
+        del temp_link_code_map[github_repo_link]
+
+        return RedirectResponse(url="/main_page", status_code=303)
+
+    except Exception as e:
         shutil.rmtree(module_folder, onexc=handle_remove_readonly)
-        return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Error generating checksum, \"versions.json\" not found"})
-
-    module_id = await get_next_sequence_value("module_id")
-    module = {"module_id": module_id, "module_name": module_name, "module_url": github_repo_link, "associated_user": request.session.get("email")}
-    await db["modules"].insert_one(module)
-    return RedirectResponse(url="/main_page", status_code=303)
+        return templates.TemplateResponse("upload_modules.html", {"request": request, "error": str(e)})
 
 
 @router.get("/delete_module/{module_id}", response_class=HTMLResponse)

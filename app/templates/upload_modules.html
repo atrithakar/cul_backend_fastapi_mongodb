@@ -18,7 +18,9 @@
         </ul>
         <a href="/logout" class="logout-link">Logout</a>
     </nav>
+
     <h1>Upload a module</h1>
+
     <h2>Guidelines for uploading modules</h2>
     <ul>
         <li>Make sure the repository is public</li>
@@ -26,101 +28,150 @@
         <li>Make sure the repository contains a LICENSE file (Recommended, not compulsory)</li>
         <li>Each version of module should follow x.y.z rule. x = major version, y = minor version, z = patch version</li>
         <li>Repo name should be the same as the module name</li>
-        <!-- <li>Make sure the repository contains a .cul file</li> -->
     </ul>
+
     <h2>Folder structure should look like this:</h2>
     <pre>
-        module_name
-        |__1.0.0
-        |   |__README.md
-        |   |__LICENSE (optional)
-        |   |__module.cpp or module.c
-        |   |__module_info.json
-        |__1.0.1
-        |   |__README.md
-        |   |__LICENSE (optional)
-        |   |__module.cpp or module.c
-        |   |__module_info.json
-        and so on...
-        |__versions.json
+module_name
+|__1.0.0
+|   |__README.md
+|   |__LICENSE (optional)
+|   |__module.cpp or module.c
+|   |__module_info.json
+|__1.0.1
+|   |__README.md
+|   |__LICENSE (optional)
+|   |__module.cpp or module.c
+|   |__module_info.json
+and so on...
+|__versions.json
     </pre>
+
     <h2>Here's a glimpse of what module_info.json should look like (it can be generated using cul init command):</h2>
     <pre>
-        {
-            "name": "test_module_5",
-            "version": "1.0.1",
-            "description": "This is the test module intended to be used for testing purposes in development of CUL",
-            "author": "Atri Thakar - The Greatest Programmer That Ever Lived",
-            "license": "MIT",
-            "keywords": [
-                "atri",
-                "thakar",
-                "test",
-                "module",
-                "5",
-                "cul"
-            ],
-            "main": "atri.c",
-            "scripts": {
-                "test": "None"
-            },
-            "repository": {
-                "type": "git",
-                "url": ""
-            },
-            "requires": [
-                "test_module_4==1.0.0"
-            ]
-        }
+{
+    "name": "test_module_5",
+    "version": "1.0.1",
+    "description": "This is the test module intended to be used for testing purposes in development of CUL",
+    "author": "Atri Thakar - The Greatest Programmer That Ever Lived",
+    "license": "MIT",
+    "keywords": [
+        "atri",
+        "thakar",
+        "test",
+        "module",
+        "5",
+        "cul"
+    ],
+    "main": "atri.c",
+    "scripts": {
+        "test": "None"
+    },
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "requires": [
+        "test_module_4==1.0.0"
+    ]
+}
     </pre>
+
     <h2>Here's a glimpse of what versions.json should look like:</h2>
     <pre>
+{
+    "versions" : [
         {
-            "versions" : [
-                {
-                    "version" : "1.0.0",
-                    "path" : "test_module_5/1.0.0"
-                },
-                {
-                    "version" : "1.0.1",
-                    "path" : "test_module_5/1.0.1"
-                }
-            ],
-            "latest" : "1.0.1",
-            "latest_path" : "test_module_5/1.0.1",
-            "requires" :{
-                "1.0.0" : [],
-                "1.0.1" : [
-                    "test_module_4==1.0.0"
-                ]
-            }
+            "version" : "1.0.0",
+            "path" : "test_module_5/1.0.0"
+        },
+        {
+            "version" : "1.0.1",
+            "path" : "test_module_5/1.0.1"
         }
+    ],
+    "latest" : "1.0.1",
+    "latest_path" : "test_module_5/1.0.1",
+    "requires" :{
+        "1.0.0" : [],
+        "1.0.1" : [
+            "test_module_4==1.0.0"
+        ]
+    }
+}
     </pre>
+
     <p><b>NOTE: For now, it will be the responsibility of module's developer to manage versions.json but the automation
-        feature will be introduced soon.</b></p>
+    feature will be introduced soon.</b></p>
+
     <h2>Link should look like this:</h2>
     <p id="url">https://github.com/owner_name/repo_name</p>
-    <form action="/upload_modules" method="post" onsubmit="return validate_link()">
-        <label for="github_repo_link">Enter the link to the GitHub repository: </label>
-        <input type="text" name="github_repo_link" id="github_repo_link" required>
-        <button type="submit">Upload</button>
+
+    <label for="github_repo_link">Enter the link to the GitHub repository: </label>
+    <input type="text" id="github_repo_link" required oninput="enableGenerateButton()">
+    <button id="generate_code_btn" onclick="generateCode()" disabled>Generate Code</button>
+
+    <div id="code_section" style="display: none; margin-top: 20px;">
+        <p><b>Generated Code:</b> <code id="generated_code_display"></code></p>
+        <button onclick="copyCode()">Copy Code</button>
+    </div>
+
+    <form action="/upload_modules" method="post" onsubmit="return validateBeforeUpload()">
+        <input type="hidden" name="github_repo_link" id="hidden_github_repo_link">
+        <button type="submit" id="upload_btn" disabled>Upload</button>
     </form>
+
     {% if error %}
     <h2 style="color: red;">{{error}}</h2>
     {% endif %}
     {% if success %}
     <h2>{{success}}</h2>
     {% endif %}
+
 </body>
+
 <script>
-    function validate_link() {
-        var link = document.getElementById("github_repo_link").value;
-        if (link.includes("https://github.com/")) {
-            return true;
+    function enableGenerateButton() {
+        const link = document.getElementById("github_repo_link").value;
+        const generateBtn = document.getElementById("generate_code_btn");
+        generateBtn.disabled = !(link.includes("https://github.com/"));
+    }
+
+    async function generateCode() {
+        const link = document.getElementById("github_repo_link").value;
+        const res = await fetch('/generate_code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ github_repo_link: link })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById("code_section").style.display = "block";
+            document.getElementById("generated_code_display").textContent = data.generated_code;
+            document.getElementById("hidden_github_repo_link").value = link;
         } else {
-            alert("Please enter a valid GitHub repository link");
-            return false; // Prevent form submission
+            alert("Failed to generate verification code from backend.");
         }
+    }
+
+    function copyCode() {
+        const code = document.getElementById("generated_code_display").textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            alert("Code copied to clipboard!");
+            document.getElementById("upload_btn").disabled = false;
+        }, () => {
+            alert("Failed to copy code.");
+        });
+    }
+
+    function validateBeforeUpload() {
+        const link = document.getElementById("hidden_github_repo_link").value;
+        if (!link.includes("https://github.com/") && !link.includes("github.com/")) {
+            alert("Invalid GitHub link.");
+            return false;
+        }
+        return true;
     }
 </script>
 
