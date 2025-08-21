@@ -13,6 +13,7 @@ from database import get_database, get_next_sequence_value
 from models import User, Module
 from rapidfuzz import process
 from .checksum_utils import generate_module_checksum, generate_checksums_for_new_versions
+from .normalize_line_endings import normalize_line_endings
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -318,6 +319,12 @@ async def upload_modules_webui(request: Request, github_repo_link: str = Form(..
     cloned_status = os.system(f"git clone {github_repo_link} {module_folder}")
     if cloned_status != 0:
         return templates.TemplateResponse("upload_modules.html", {"request": request, "error": "Error cloning the repository"})
+    
+    # Normalize line endings in the cloned files
+    for root, dirs, files in os.walk(module_folder):
+        for file in files:
+            file_path = os.path.join(root, file)
+            normalize_line_endings(file_path)
 
     try:
         if not os.path.exists(os.path.join(module_folder, "versions.json")):
