@@ -1,5 +1,0 @@
-{
-    "name" : "test_module_4",
-    "version" : "1.0.0", 
-    "requires": ["test_module_1==1.0.2", "test_module_2==1.0.0"]
-}
