@@ -157,8 +157,11 @@ async def change_password_webui(request: Request, old_password: str = Form(...),
     '''
     if not request.session.get("email"):
         return RedirectResponse(url="/", status_code=303)
-
+        
     profile = await db["users"].find_one({"email": request.session.get("email")})
+    
+    if request.session.get("email") == "test@cul.com":
+        return templates.TemplateResponse("profile.html",  {"request": request, "error": "This is a demo account, you can't change password.", "profile": profile})
     
     if request.session.get("email") != profile.get("email"):
         return templates.TemplateResponse("index.html", {"request": request, "error": "You are not authorized to change the password"})
